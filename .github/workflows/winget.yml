@@ -5,10 +5,6 @@ on:
     workflows: ["Release"]
     types: [completed]
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   publish:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -29,6 +25,6 @@ jobs:
         uses: vedantmgoyal9/winget-releaser@v2
         with:
           identifier: ChurchApps.FreeShow
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.WINGET_PAT }}
           fork-user: vassbo
           urls: ${{ steps.get_release.outputs.installer_url }}
