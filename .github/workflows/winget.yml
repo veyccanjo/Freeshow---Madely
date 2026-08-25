@@ -2,7 +2,7 @@ name: Publish to WinGet
 
 on:
   workflow_run:
-    workflows: ["Build FreeShow Madely - Windows"]
+    workflows: ["Release"]
     types: [completed]
 
 jobs:
@@ -11,9 +11,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Download release info
+        id: get_release
+        run: |
+          # Get the latest release info
+          RELEASE_INFO=$(curl -s https://api.github.com/repos/veyccanjo/Freeshow---Madely/releases/latest)
+          TAG=$(echo $RELEASE_INFO | jq -r '.tag_name')
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          
+          # Get the Windows installer URL (x64)
+          INSTALLER_URL=$(echo $RELEASE_INFO | jq -r '.assets[] | select(.name | contains("FreeShow") and contains("x64") and contains(".exe")) | .browser_download_url' | head -1)
+          echo "installer_url=${INSTALLER_URL}" >> $GITHUB_OUTPUT
+
       - name: WinGet Releaser
         uses: vedantmgoyal9/winget-releaser@v2
         with:
           identifier: ChurchApps.FreeShow
           token: ${{ secrets.WINGET_TOKEN }}
           fork-user: vassbo
+          urls: ${{ steps.get_release.outputs.installer_url }}
