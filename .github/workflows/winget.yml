@@ -5,6 +5,10 @@ on:
     workflows: ["Release"]
     types: [completed]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   publish:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -13,15 +17,11 @@ jobs:
     steps:
       - name: Download release info
         id: get_release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get the latest release info
-          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/veyccanjo/Freeshow---Madely/releases/latest)
+          RELEASE_INFO=$(curl -s https://api.github.com/repos/veyccanjo/Freeshow---Madely/releases/latest)
           TAG=$(echo $RELEASE_INFO | jq -r '.tag_name')
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           
-          # Get the Windows installer URL (x64)
           INSTALLER_URL=$(echo $RELEASE_INFO | jq -r '.assets[] | select(.name | contains("FreeShow") and contains("x64") and contains(".exe")) | .browser_download_url' | head -1)
           echo "installer_url=${INSTALLER_URL}" >> $GITHUB_OUTPUT
 
