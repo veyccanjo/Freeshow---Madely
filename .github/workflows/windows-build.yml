@@ -3,6 +3,11 @@ name: Build FreeShow Madely - Windows
 on:
   release:
     types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: build-windows-${{ github.event.release.tag_name || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-windows:
@@ -14,12 +19,14 @@ jobs:
     steps:
       - name: Checkout release
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
+          node-version: '22'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -27,8 +34,16 @@ jobs:
       - name: Build FreeShow
         run: npm run build
 
-      - name: Build Windows installer
-        run: npx electron-builder --win --x64 --publish never
+      - name: Build Windows installer (electron-builder)
+        run: npx electron-builder --win nsis --x64 --publish never
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+
+      - name: List build output
+        run: |
+          echo "Contents of dist/:"
+          dir dist
 
       - name: Upload Windows installer to release
         uses: softprops/action-gh-release@v2
@@ -36,5 +51,13 @@ jobs:
           files: |
             dist/*.exe
             dist/*.blockmap
+            dist/*.zip
+            dist/*.nsis*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact (actions) for debugging
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/*
