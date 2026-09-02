@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import dayjs from "dayjs"
 import extendedFormat from "dayjs/plugin/advancedFormat"
 import localizedFormat from "dayjs/plugin/localizedFormat"
@@ -97,18 +98,6 @@ export const mediaBlendOptions = [
     { value: "color", label: "Color" },
     { value: "luminosity", label: "Luminosity" }
 ]
-
-export const filterSection = splitIntoRows([
-    { id: "filter", key: "hue-rotate", type: "number", value: 0, extension: "deg", values: { label: "filter.hue-rotate", defaultValue: 0, step: 5, max: 360, showSlider: true, sliderValues: { step: 1 } } },
-    { id: "filter", key: "invert", type: "number", value: 0, multiplier: 10, values: { label: "filter.invert", defaultValue: 0, max: 10, showSlider: true } },
-    { id: "filter", key: "blur", type: "number", value: 0, extension: "px", values: { label: "filter.blur", defaultValue: 0, max: 100, showSlider: true, sliderValues: { max: 50 } } },
-    { id: "filter", key: "grayscale", type: "number", value: 0, multiplier: 10, values: { label: "filter.grayscale", defaultValue: 0, max: 10, showSlider: true } },
-    { id: "filter", key: "sepia", type: "number", value: 0, multiplier: 10, values: { label: "filter.sepia", defaultValue: 0, max: 10, showSlider: true } },
-    { id: "filter", key: "brightness", type: "number", value: 1, multiplier: 10, values: { label: "filter.brightness", defaultValue: 10, max: 100, showSlider: true, sliderValues: { min: 2, max: 18 } } },
-    { id: "filter", key: "contrast", type: "number", value: 1, multiplier: 10, values: { label: "filter.contrast", defaultValue: 10, max: 100, showSlider: true, sliderValues: { min: 2, max: 18 } } },
-    { id: "filter", key: "saturate", type: "number", value: 1, multiplier: 10, values: { label: "filter.saturate", defaultValue: 10, max: 100, showSlider: true, sliderValues: { max: 20 } } },
-    { id: "filter", key: "opacity", type: "number", value: 1, multiplier: 100, values: { label: "filter.opacity", defaultValue: 100, step: 10, max: 100, showSlider: true, sliderValues: { step: 1 } } }
-])
 
 ///
 
@@ -309,7 +298,7 @@ export const textSections: { [key: string]: EditBoxSection } = {
         ]
     },
     special: {
-        inputs: [[{ id: "button.press", type: "dropdown", value: "", values: { label: "edit.press_action", options: "actions", allowEmpty: true } }], [{ id: "button.release", type: "dropdown", value: "", values: { label: "edit.release_action", options: "actions", allowEmpty: true } }]]
+        inputs: [[{ id: "button.press", type: "dropdown", value: "", values: { label: "edit.press_action", options: "actions", allowEmpty: true } }], [{ id: "button.release", type: "dropdown", va[...]}
     },
     CSS: {
         noReset: true,
@@ -394,6 +383,10 @@ export const itemBoxes: Box2 = {
         icon: "text",
         sections: textSections
     },
++    next_song: {
++        icon: "music_note",
++        sections: textSections
++    },
     media: {
         icon: "image",
         sections: mediaSections
@@ -500,215 +493,3 @@ export const itemBoxes: Box2 = {
                             placeholder: "E.g.: LT, LLLL, MMMM D YYYY h:mm A"
                         }
                     },
-                    {
-                        id: "tip",
-                        type: "tip",
-                        hidden: true,
-                        value: "",
-                        values: {
-                            label: "",
-                            subtext: '<a href="https://day.js.org/docs/en/display/format#list-of-all-available-formats" class="open">List of day.js formats</a>'
-                        }
-                    }
-                ])
-            })
-        }
-    },
-    camera: {
-        icon: "camera",
-        sections: {
-            default: {
-                inputs: splitIntoRows([
-                    { id: "device", type: "popup", value: "", values: { label: "popup.choose_camera", icon: "camera", popupId: "choose_camera" } },
-                    { id: "fit", type: "dropdown", value: "contain", values: { label: "media.fit", options: mediaFitOptions.filter((a) => a.value !== "blur") } },
-                    { id: "flipped", type: "checkbox", value: false, values: { label: "media.flip_horizontally" } },
-                    { id: "flippedY", type: "checkbox", value: false, values: { label: "media.flip_vertically" } }
-                ])
-            }
-        }
-    },
-    slide_tracker: {
-        icon: "percentage",
-        sections: {
-            ...nonTextboxTextStyle({
-                inputs: [
-                    [
-                        {
-                            id: "tracker.type",
-                            type: "dropdown",
-                            value: "number",
-                            values: {
-                                label: "clock.type",
-                                options: [
-                                    { value: "number", label: "variables.number" },
-                                    { value: "bar", label: "edit.progress_bar" },
-                                    { value: "group", label: "tools.groups" },
-                                    { value: "project", label: "formats.project" }
-                                ],
-                                style: "flex: 4;"
-                            }
-                        },
-                        {
-                            id: "tracker.accent",
-                            type: "color",
-                            value: "#F0008C",
-                            values: {
-                                label: "edit.accent_color",
-                                allowEmpty: true,
-                                noLabel: true,
-                                style: "flex: 1;"
-                            }
-                        }
-                    ],
-                    [{ type: "checkbox", id: "tracker.childProgress", value: false, values: { label: "edit.sub_indexes" } }],
-                    [{ type: "checkbox", id: "tracker.oneLetter", value: false, values: { label: "edit.one_letter" } }],
-                    [{ id: "tracker.projectMetadata", type: "dropdown", value: "name", values: { label: "tools.metadata", options: [{ value: "name", label: "show.name" }] } }]
-                ]
-            })
-        }
-    },
-    events: {
-        icon: "calendar",
-        sections: {
-            ...eventText({
-                inputs: [
-                    [{ id: "events.maxEvents", type: "number", value: 5, values: { label: "edit.max_events", max: 20 } }],
-                    [{ id: "events.startDaysFromToday", type: "number", value: 0, values: { label: "edit.start_days_from_today", max: 10000 } }],
-                    [{ id: "events.justOneDay", type: "checkbox", value: false, values: { label: "edit.just_one_day" } }],
-                    [
-                        { id: "events.fromTime", type: "time", hidden: true, value: "00:00", values: { label: "calendar.from_time" } },
-                        { id: "events.toTime", type: "time", hidden: true, value: "00:00", values: { label: "calendar.to_time" } }
-                    ],
-                    [{ id: "events.enableStartDate", type: "checkbox", value: false, values: { label: "edit.enable_start_date" } }],
-                    [
-                        { id: "events.startDate", type: "date", hidden: true, value: "", values: { label: "calendar.from_date" } },
-                        { id: "events.startTime", type: "time", hidden: true, value: "", values: { label: "calendar.from_time" } }
-                    ]
-                ]
-            })
-        }
-    },
-    weather: {
-        icon: "cloud",
-        sections: {
-            default: {
-                inputs: [
-                    [{ id: "weather.size", type: "number", value: 100, values: { label: "edit.size", min: 0, max: 200 } }],
-                    [
-                        { id: "weather.latitude", type: "number", value: 0, values: { label: "edit.latitude", min: -90, max: 90 } },
-                        { id: "weather.longitude", type: "number", value: 0, values: { label: "edit.longitude", min: -180, max: 180 } }
-                        // {  id: "weather.altitude", type: "number", value: 0, values: { label: "edit.altitude", max: 5000 } },
-                    ],
-                    [{ id: "weather.useFahrenheit", type: "checkbox", value: false, values: { label: "edit.fahrenheit" } }],
-                    [{ id: "weather.longRange", type: "checkbox", value: false, values: { label: "edit.longRange" } }]
-                ]
-            }
-        }
-    },
-    visualizer: {
-        icon: "visualizer",
-        sections: {
-            default: {
-                inputs: [
-                    [
-                        {
-                            id: "visualizer.type",
-                            type: "dropdown",
-                            value: "bars",
-                            values: {
-                                label: "sort.type",
-                                defaultValue: "bars",
-                                options: [
-                                    { value: "bars", label: "Lines" },
-                                    { value: "particles", label: "Particles" },
-                                    { value: "kaleidoscope", label: "Kaleidoscope" }
-                                ]
-                            }
-                        }
-                    ],
-                    [
-                        { id: "visualizer.padding", type: "number", value: 0, values: { label: "edit.padding", style: "flex: 4;" } },
-                        { id: "visualizer.color", type: "color", value: "", values: { label: "edit.color", allowEmpty: true, allowOpacity: true, noLabel: true, style: "flex: 1;" } }
-                    ]
-                ]
-            }
-        }
-    },
-    captions: {
-        icon: "captions",
-        sections: {
-            default: {
-                inputs: splitIntoRows([
-                    { id: "captions.language", type: "dropdown", value: "en-US", values: { label: "captions.language", options: captionLanguages.map((a) => ({ value: a.id, label: a.name })) } },
-                    { id: "captions.translate", type: "dropdown", value: "", values: { label: "captions.translate", options: "captionTranslateLanguages" } },
-                    { id: "captions.googlekey", type: "string", value: "", values: { label: "Google Translate API Key", placeholder: "Optional: for 100+ languages" } },
-                    { id: "captions.showtime", type: "number", value: 5, values: { label: "captions.showtime", min: 1, max: 60 } },
-                    { id: "captions.roomId", type: "string", value: "", values: { label: "Room ID", placeholder: "empty = automatic" } },
-                    { id: "", type: "tip", value: "", values: { label: "captions.powered_by", subtext: "CAPTION.Ninja" } }
-                ])
-            },
-            // WIP custom inputs for the css
-            // https://github.com/steveseguin/captionninja?tab=readme-ov-file#changing-the-font-size-and-more
-            CSS: {
-                noReset: true,
-                inputs: [[{ id: "captions.style", type: "textarea", value: "", values: { label: "CSS" } }]]
-            }
-        }
-    },
-    current_output: {
-        icon: "screen",
-        sections: {
-            default: {
-                inputs: splitIntoRows([
-                    { id: "currentOutput.source", type: "dropdown", value: "", values: { label: "show.source", options: "outputWindows", allowEmpty: true } },
-                    { id: "currentOutput.showLabel", type: "checkbox", value: false, values: { label: "stage.labels" } }
-                ])
-            }
-        }
-    },
-    icon: {
-        icon: "star",
-        sections: {
-            default: { inputs: [[{ id: "style", key: "color", type: "color", value: "", values: { label: "edit.color", allowOpacity: true, allowEmpty: true } }]] },
-            special: {
-                inputs: [[{ id: "button.press", type: "dropdown", value: "", values: { label: "edit.press_action", options: "actions", allowEmpty: true } }], [{ id: "button.release", type: "dropdown", value: "", values: { label: "edit.release_action", options: "actions", allowEmpty: true } }]]
-            }
-        }
-    },
-    chart: {
-        icon: "charts",
-        sections: {
-            default: {
-                inputs: [
-                    [
-                        {
-                            type: "dropdown",
-                            id: "chart.type",
-                            value: "bar",
-                            values: {
-                                label: "sort.type",
-                                options: [
-                                    { value: "bar", label: "Bar" },
-                                    { value: "line", label: "Line" },
-                                    { value: "pie", label: "Pie" }
-                                ]
-                            }
-                        }
-                    ],
-                    [{ type: "number", id: "chart.holeSize", value: 0, values: { label: "edit.size", defaultValue: 0, step: 1, max: 100, min: 0, showSlider: true } }],
-                    [{ type: "popup", id: "chart.data", value: "", values: { label: "popup.edit_chart", name: "emitters.data", icon: "grid", popupId: "edit_chart", allowEmpty: false } }]
-                ]
-            }
-        }
-    },
-    table: {
-        icon: "grid",
-        sections: (() => {
-            const sections = nonTextboxTextStyle({
-                inputs: [[{ type: "color", id: "table.borderColor", value: "", values: { label: "edit.border", allowEmpty: true, allowOpacity: true } }], [{ type: "number", id: "table.borderWidth", value: 1, values: { label: "edit.width", min: 0, max: 50, showSlider: true } }]]
-            })
-            sections.align = { defaultValues: ["center", "center"], inputs: [alignX, alignY] }
-            return sections
-        })()
-    }
-}
