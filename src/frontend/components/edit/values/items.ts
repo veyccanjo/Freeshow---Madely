@@ -67,6 +67,8 @@ export const stageItems: AddItemGroup[] = [
     {
         items: [
             { id: "text", icon: "text", label: "items.text" },
+            // NEXT SONG: show next song/group on stage display
+            { id: "next_song", icon: "music_note", label: "stage.next_song" },
             {
                 id: "dynamic_values",
                 icon: "arrow_back_modern",
