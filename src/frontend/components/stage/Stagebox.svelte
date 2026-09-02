@@ -26,7 +26,7 @@
     import SlideNotes from "./items/SlideNotes.svelte"
     import SlideText from "./items/SlideText.svelte"
     import VideoTime from "./items/VideoTime.svelte"
-    import { getCustomStageLabel, getSlideTextItems, stageItemToItem } from "./stage"
+    import { getCustomStageLabel, getSlideTextItems, stageItemToItem, getNextSongName } from "./stage"
     import StageLayout from "./StageLayout.svelte"
 
     export let id: string
@@ -118,7 +118,7 @@
 
     // Exclude slide_text from Stagebox autosize - it uses Textbox's own autosize instead
     // Stagebox autosize is for SlideNotes, SlideProgress, VideoTime, etc.
-    $: autoSizeEnabled = item?.type === "current_output" || item?.type === "slide_text" ? false : item?.type?.includes("text") ? item?.auto || (item?.textFit && item?.textFit !== "none") : item?.auto !== false || item?.textFit !== "none"
+    $: autoSizeEnabled = item?.type === "current_output" || item?.type === "slide_text" ? false : item?.type?.includes("text") ? item?.auto || (item?.textFit && item?.textFit !== "none") : item?.[...]
 
     let alignElem
     let size = 100
@@ -179,6 +179,19 @@
     $: currentSlide = currentOutput.out?.slide || (slideOffset !== 0 ? $outputSlideCache[stageOutputId] || null : null)
 
     $: outputWindowId = item?.currentOutput?.source || stageOutputId
+
+    // Reactive computation of next song name. Include the stores used by getNextSongName so Svelte will re-evaluate when they change.
+    $: {
+        // reference stores so this reactive block re-runs on their updates
+        $outputs; // active outputs map
+        $allOutputs;
+        $outputSlideCache;
+        $showsCache;
+        $stageShows;
+        $activeStage;
+        // compute next song from helper
+        nextSongName = getNextSongName(stageLayout)
+    }
 
     let timeout: NodeJS.Timeout | null = null
     $: if (stageOutputId && ($allOutputs || $outputs)) startTimeout()
@@ -311,7 +324,7 @@
     class:selected={edit && $activeStage.items.includes(id)}
     class:isDisabledVariable
     class:isOutput={!!$currentWindow}
-    style="{getCustomStyle(itemStyle)}{id.includes('slide') && !id.includes('tracker') ? '' : textStyle}{edit ? `outline: ${3 / ratio}px solid rgb(255 255 255 / 0.2);` : ''}--labelColor: {currentShow?.settings?.labelColor || '#d0a853'};{fixedWidth}{cssVariables}"
+    style="{getCustomStyle(itemStyle)}{id.includes('slide') && !id.includes('tracker') ? '' : textStyle}{edit ? `outline: ${3 / ratio}px solid rgb(255 255 255 / 0.2);` : ''}--labelColor: {currentShow?.settings?.labelsColor || 'var(--secondary)'}"
     on:mousedown={mousedown}
 >
     {#if currentShow?.settings?.labels && id && item}
@@ -341,7 +354,7 @@
 
             <!-- conditions -->
             {#if Object.values(item.conditions || {}).length}
-                <div data-title={translateText("actions.conditions")} class="actionButton" style="zoom: {1 / ratio};left: 0;inset-inline-end: unset;background-color: var(--{showItemState ? '' : 'dis'}connected);">
+                <div data-title={translateText("actions.conditions")} class="actionButton" style="zoom: {1 / ratio};left: 0;inset-inline-end: unset;background-color: var(--{showItemState ? '' : '[...])}">
                     <Button on:click={removeConditions} redHover>
                         <Icon id="light" white />
                     </Button>
@@ -366,7 +379,7 @@
                     {/if}
 
                     {#if item.currentOutput?.showLabel}
-                        <div class="label" style="position: absolute;top: unset;bottom: 10px;left: 50%;transform: translateX(-50%);pointer-events: none;font-size: 28px;background-color: rgba(0, 0, 0, 0.5);padding: 2px 6px;border-radius: 12px;height: 46px;width: 180px;display: flex;justify-content: center;align-items: center;">
+                        <div class="label" style="position: absolute;top: unset;bottom: 10px;left: 50%;transform: translateX(-50%);pointer-events: none;font-size: 28px;background-color: rgba(0, 0, 0, 0.6);padding: 6px 12px;border-radius: 6px;">
                             <p>{$outputs[outputWindowId]?.name || $allOutputs[outputWindowId]?.name || ""}</p>
                         </div>
                     {/if}
@@ -386,10 +399,17 @@
                     <!-- For slide_text items, don't pass fontSize from item style (which is MAX_FONT_SIZE=800) -->
                     <!-- Let Textbox's own autosize compute the correct value -->
                     {#key currentSlide?.id || currentSlide?.index}
-                        <SlideText {currentSlide} {slideOffset} stageItem={item} chords={typeof item.chords === "boolean" ? item.chords : item.chords?.enabled} ref={{ type: "stage", id }} autoSize={item.textFit !== "none" && item.auto !== false} fontSize={0} {textStyle} style={item.type ? item.keepStyle : false} />
+                        <SlideText {currentSlide} {slideOffset} stageItem={item} chords={typeof item.chords === "boolean" ? item.chords : item.chords?.enabled} ref={{ type: "stage", id }} autoSize={item.auto !== false ? autoSize : fontSize} {preview} outputId={outputWindowId} />
                     {/key}
                 {:else if item.type === "slide_notes" || id.includes("notes")}
                     <SlideNotes {currentSlide} {slideOffset} autoSize={item.auto !== false ? autoSize : fontSize} />
+                {:else if item.type === "next_song"}
+                    {#if !$currentWindow}
+                        <div class="next-song" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; pointer-events: none;">
+                            <div class="next-song-title" style="opacity: 0.85; font-weight: 700; margin-bottom: 4px;">NEXT SONG</div>
+                            <div class="next-song-value" style="font-size: {item.auto !== false ? autoSize : fontSize}px;">{nextSongName || ""}</div>
+                        </div>
+                    {/if}
                 {:else if item.type === "text"}
                     {#if edit}
                         {#key $refreshEditSlide}
@@ -398,11 +418,11 @@
                             </span>
                         {/key}
                     {:else}
-                        <Textbox item={stageItemToItem(item)} stageItem={item} ref={{ type: "stage", id }} {fontSize} stageAutoSize={item.auto || (item.textFit && item.textFit !== "none")} isStage />
+                        <Textbox item={stageItemToItem(item)} stageItem={item} ref={{ type: "stage", id }} {fontSize} stageAutoSize={item.auto || (item.textFit && item.textFit !== "none")} isStage hideText={!!$currentWindow} />
                     {/if}
                 {:else if item.type}
                     {#if newItem}
-                        <SlideItems item={stageItemToItem(newItem)} ref={{ type: "stage", id }} fontSize={item.auto !== false || item.textFit !== "none" ? autoSize : fontSize} {preview} outputId={stageOutputId} />
+                        <SlideItems item={stageItemToItem(newItem)} ref={{ type: "stage", id }} fontSize={item.auto !== false || item.textFit !== "none" ? autoSize : fontSize} {preview} outputId={outputWindowId} />
                     {/if}
                 {:else}
                     <!-- OLD CODE -->
@@ -410,7 +430,7 @@
                         {#if id.includes("slide_tracker")}
                             <SlideProgress tracker={item.tracker || {}} autoSize={item.auto !== false ? autoSize : fontSize} outputId={stageOutputId} />
                         {:else if id.includes("clock")}
-                            <Clock style={false} fontStyle={item.auto === false ? "" : `font-size: ${edit ? autoSize : fontSize}px;`} seconds={item.clock?.seconds ?? true} dateFormat={item.clock?.show_date ? "DD/MM/YYYY" : "none"} />
+                            <Clock style={false} fontStyle={item.auto === false ? "" : `font-size: ${edit ? autoSize : fontSize}px;`} seconds={item.clock?.seconds ?? true} dateFormat={item.clock?.dateFormat || "none"} />
                         {:else if id.includes("video")}
                             <VideoTime outputId={stageOutputId} autoSize={item.auto !== false ? autoSize : fontSize} reverse={id.includes("countdown")} />
                         {:else if id.includes("first_active_timer")}
@@ -578,5 +598,26 @@
         animation-duration: 600ms;
         animation-timing-function: ease-out;
         animation-fill-mode: forwards;
+    }
+
+    /* NEXT SONG styling */
+    .next-song {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: inherit;
+    }
+    .next-song-title {
+        font-size: 0.9em;
+        letter-spacing: 1px;
+        opacity: 0.9;
+    }
+    .next-song-value {
+        font-weight: 600;
+        text-align: center;
+        word-break: break-word;
     }
 </style>
