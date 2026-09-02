@@ -102,6 +102,69 @@ export function getSlideTextItems(stageLayout: StageLayout, item: StageItem, _up
     return currentItems
 }
 
+// NEW: Calculate NEXT SONG name (not next slide)
+// - Determines the active output & current playback position
+// - Walks the flattened layoutRef and finds the first later entry whose resolved slide.group differs
+// - Returns the normalized group name or null if none found
+export function getNextSongName(stageLayout: StageLayout | null = null): string | null {
+    // Determine active show/context like other helpers do
+    const currentShow = stageLayout === null ? (get(activeStage).id ? get(stageShows)[get(activeStage).id!] : null) : stageLayout
+    const stageMainOutputId = currentShow?.settings?.output || getActiveOutputs(isOutputWindow() ? get(allOutputs) : get(outputs), false, true, true)[0]
+
+    // Resolve the current output and its published slide info
+    const currentOutput = get(outputs)[stageMainOutputId] || get(allOutputs)[stageMainOutputId] || {}
+    const currentSlide = currentOutput.out?.slide || get(outputSlideCache)[stageMainOutputId] || null
+
+    if (!currentSlide || currentSlide.id === "temp") return null
+
+    const showId = currentSlide.id
+    const layoutRef: LayoutRef[] = getLayoutRef(showId)
+    if (!layoutRef || layoutRef.length === 0) return null
+
+    // Prefer explicit layout index from the output to select the correct layoutRef entry (handles repeated slide IDs)
+    const currentRefIndex = typeof currentSlide.index === "number" ? currentSlide.index : layoutRef.findIndex((e) => e.id === (currentSlide as any).slideId || e.id === (currentSlide as any).id)
+    if (currentRefIndex === -1 || currentRefIndex === null || currentRefIndex === undefined) return null
+
+    const shows = get(showsCache)
+    const show = shows[showId]
+    if (!show) return null
+
+    // Helper to resolve a LayoutRef entry to its canonical slide.group (fall back to parent if child has no group)
+    const resolveEntryGroup = (entry: LayoutRef): string | null => {
+        const slideObj = show.slides?.[entry.id]
+        let group = slideObj?.group ?? null
+        if (group === null && entry.parent) {
+            // parent.layoutIndex should point to parent entry index in layoutRef array
+            const parentIndex = entry.parent.layoutIndex
+            const parentEntry = layoutRef[parentIndex]
+            if (parentEntry) group = show.slides?.[parentEntry.id]?.group ?? null
+        }
+        return group ?? null
+    }
+
+    // Determine current group (account for child entries without group)
+    const currentEntry = layoutRef[currentRefIndex]
+    if (!currentEntry) return null
+    const currentGroup = resolveEntryGroup(currentEntry)
+
+    // Walk forward through layoutRef to find first entry with a different resolved group
+    for (let i = currentRefIndex + 1; i < layoutRef.length; i++) {
+        const entry = layoutRef[i]
+        if (!entry) continue
+        // Skip disabled entries
+        if (entry.data?.disabled) continue
+
+        const entryGroup = resolveEntryGroup(entry)
+        // Different group (including null vs non-null) marks next SONG boundary
+        if (entryGroup !== currentGroup) {
+            return entryGroup || null
+        }
+    }
+
+    // No next song found
+    return null
+}
+
 // GET CORRECT INDEX OFFSET, EXCLUDING DISABLED SLIDES
 export function getStageTextLayoutOffset(showRef: LayoutRef[], slideOffset: number, slideIndex: number | null) {
     let customOffset: number | null = null
