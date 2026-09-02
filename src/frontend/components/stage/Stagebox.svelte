@@ -1,7 +1,7 @@
 <script lang="ts">
     import { getContext, onDestroy } from "svelte"
     import type { StageItem, StageLayout as TStageLayout } from "../../../types/Stage"
-    import { activePopup, activeStage, activeTimers, allOutputs, currentWindow, dictionary, outputs, outputSlideCache, refreshEditSlide, stageShows, timers, variables } from "../../stores"
+    import { activePopup, activeStage, activeTimers, allOutputs, currentWindow, dictionary, outputs, outputSlideCache, refreshEditSlide, stageShows, timers, variables, showsCache } from "../../stores"
     import { translateText } from "../../utils/language"
     import { sendBackgroundToStage } from "../../utils/stageTalk"
     import EditboxLines from "../edit/editbox/EditboxLines.svelte"
@@ -118,7 +118,13 @@
 
     // Exclude slide_text from Stagebox autosize - it uses Textbox's own autosize instead
     // Stagebox autosize is for SlideNotes, SlideProgress, VideoTime, etc.
-    $: autoSizeEnabled = item?.type === "current_output" || item?.type === "slide_text" ? false : item?.type?.includes("text") ? item?.auto || (item?.textFit && item?.textFit !== "none") : item?.[...]
+    $: autoSizeEnabled = item
+        ? item.type === "current_output" || item.type === "slide_text"
+            ? false
+            : item.type?.includes("text")
+            ? item.auto || (item.textFit && item.textFit !== "none")
+            : (item.auto ?? false)
+        : false
 
     let alignElem
     let size = 100
@@ -180,17 +186,19 @@
 
     $: outputWindowId = item?.currentOutput?.source || stageOutputId
 
-    // Reactive computation of next song name. Include the stores used by getNextSongName so Svelte will re-evaluate when they change.
+    // Reactive computation of next song name. Include the stores used so Svelte re-evaluates when they change.
+    let nextSongName: string = ""
     $: {
         // reference stores so this reactive block re-runs on their updates
-        $outputs; // active outputs map
-        $allOutputs;
-        $outputSlideCache;
-        $showsCache;
-        $stageShows;
-        $activeStage;
+        $outputs
+        $allOutputs
+        $outputSlideCache
+        $stageShows
+        $activeStage
+        $showsCache
+
         // compute next song from helper
-        nextSongName = getNextSongName(stageLayout)
+        nextSongName = (getNextSongName(stageLayout) || "")
     }
 
     let timeout: NodeJS.Timeout | null = null
@@ -345,7 +353,7 @@
         <div class="actions">
             <!-- button -->
             {#if item.button?.press || item.button?.release}
-                <div data-title={translateText("popup.action")} class="actionButton" style="zoom: {1 / ratio};left: 0;inset-inline-end: unset;">
+                <div data-title={translateText("popup.action")} class="actionButton" style="zoom: {1 / ratio}; left: 0; inset-inline-end: unset;">
                     <span style="padding: 5px;z-index: 3;font-size: 0;">
                         <Icon id="button" white />
                     </span>
@@ -354,7 +362,7 @@
 
             <!-- conditions -->
             {#if Object.values(item.conditions || {}).length}
-                <div data-title={translateText("actions.conditions")} class="actionButton" style="zoom: {1 / ratio};left: 0;inset-inline-end: unset;background-color: var(--{showItemState ? '' : '[...])}">
+                <div data-title={translateText("actions.conditions")} class="actionButton" style="zoom: {1 / ratio}; left: 0; inset-inline-end: unset; background-color: var(--focus);">
                     <Button on:click={removeConditions} redHover>
                         <Icon id="light" white />
                     </Button>
